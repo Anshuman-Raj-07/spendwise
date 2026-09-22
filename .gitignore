@@ -1,0 +1,26 @@
+# Python virtual environment
+venv/
+env/
+.venv/
+
+# Environment variables
+.env
+
+# SQLite database
+*.db
+*.sqlite3
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Streamlit internal
+.streamlit/secrets.toml
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+
