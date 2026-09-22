@@ -113,56 +113,72 @@ Managing personal expenses is often tedious: manual forms require selecting date
 SpendWise adheres to the **Separation of Concerns (SoC)** principle: language models handle natural language translation, while relational databases and Python handle arithmetic computation.
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor User as User / Client
-    participant UI as Streamlit UI
-    participant AI as AI Service (Gemini / NLP)
-    participant Engine as Deterministic Service Layer
-    participant DB as SQLite / SQLAlchemy
+flowchart TD
+    User([User Natural Query]) --> UI[Streamlit UI]
+    UI --> Stage1[Stage 1: Intent Classification]
+    Stage1 -->|Structured Intent & Filters| Stage2[Stage 2: Deterministic Calculation Engine]
+    Stage2 -->|SQL Query| DB[(SQLite Database)]
+    DB -->|Raw Records| Stage2
+    Stage2 -->|Calculated Aggregates & Budget Facts| Stage3[Stage 3: Response Synthesis]
+    Stage3 --> UI
+    UI --> Output([User Response & Inspection Drawer])
 
-    User->>UI: "How much did I spend on food this month?"
-    UI->>AI: Classify Query Intent & Extract Parameters
-    Note over AI: Identifies Intent: CATEGORY_SPENDING<br/>Category: Food, Month: Current
-    AI-->>UI: { intent: "CATEGORY_SPENDING", category: "Food", month: 9, year: 2026 }
-    
-    UI->>Engine: execute_intent_query(params)
-    Engine->>DB: SELECT SUM(amount), COUNT(*) WHERE category='Food'
-    DB-->>Engine: Total: ₹4,250.00, Transactions: 8, Budget: ₹5,000.00
-    Engine-->>UI: Deterministic Financial Result
-    
-    UI->>AI: Synthesize Explanation with Deterministic Facts
-    AI-->>UI: "You have spent ₹4,250 on Food this month across 8 transactions (Budget: ₹5,000)."
-    UI-->>User: Render Formatted Response + Transparent Inspection Drawer
+    subgraph AI Service
+        Stage1
+        Stage3
+    end
+
+    subgraph Service Layer
+        Stage2
+    end
 ```
 
 ---
 
 ## 🗄️ Database Schema
 
-The SQLite database is managed via **SQLAlchemy 2.0+ ORM** with indexes on foreign dates and categories for rapid lookups:
+The SQLite database is managed via **SQLAlchemy 2.0+ ORM** with indexes on dates and categories for rapid aggregations:
 
 ```mermaid
 erDiagram
+    EXPENSES ||--o{ BUDGETS : categorized_under
     EXPENSES {
-        int id PK "Auto Increment"
-        float amount "Positive numerical amount"
-        string category "Whitelisted category name"
-        string description "Transaction narrative"
-        date date "Transaction date (YYYY-MM-DD)"
-        datetime created_at "Record creation timestamp"
+        int id PK
+        float amount
+        string category
+        string description
+        string date
+        string created_at
     }
-
     BUDGETS {
-        int id PK "Auto Increment"
-        string category "Whitelisted category name"
-        float monthly_limit "Monthly threshold cap"
-        int month "Month number (1-12)"
-        int year "Calendar year (e.g. 2026)"
+        int id PK
+        string category
+        float monthly_limit
+        int month
+        int year
     }
-
-    EXPENSES ||--o{ BUDGETS : "evaluated against"
 ```
+
+### Table Specifications
+
+#### `expenses`
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `INTEGER` | Primary Key, Autoincrement | Unique transaction ID |
+| `amount` | `FLOAT` | `> 0`, Not Null | Numerical expense value in ₹ |
+| `category` | `VARCHAR(50)` | Not Null, Whitelisted | Category (e.g. `Food`, `Transport`, `Bills`) |
+| `description` | `VARCHAR(255)` | Not Null | Description or merchant |
+| `date` | `DATE` | Not Null, Indexed | ISO calendar date (`YYYY-MM-DD`) |
+| `created_at` | `DATETIME` | UTC Default | Record creation timestamp |
+
+#### `budgets`
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `INTEGER` | Primary Key, Autoincrement | Unique budget entry ID |
+| `category` | `VARCHAR(50)` | Not Null, Whitelisted | Budget category |
+| `monthly_limit` | `FLOAT` | `> 0`, Not Null | Monthly spending ceiling in ₹ |
+| `month` | `INTEGER` | `1 <= month <= 12` | Calendar month |
+| `year` | `INTEGER` | Not Null | Calendar year (e.g. `2026`) |
 
 ---
 
