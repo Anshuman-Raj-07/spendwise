@@ -8,7 +8,7 @@ Thank you for your interest in contributing to **SpendWise**! We welcome communi
 
 1. **Fork and Clone**:
    ```bash
-   git clone https://github.com/your-username/spendwise.git
+   git clone https://github.com/Anshuman-Raj-07/spendwise.git
    cd spendwise
    ```
 

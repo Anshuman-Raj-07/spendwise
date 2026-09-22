@@ -235,7 +235,7 @@ spendwise/
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/spendwise.git
+   git clone https://github.com/Anshuman-Raj-07/spendwise.git
    cd spendwise
    ```
 
